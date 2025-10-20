@@ -98,3 +98,61 @@ JSON
   "confidence": 0.92,
   "model_version": "v1.0.0"
 }
+
+
+MLOps Monitoring & Observability
+This project includes a complete, production-grade monitoring stack built on Prometheus and Grafana. This stack provides real-time observability into the API's performance, scraping key metrics like request latency, error rates, and traffic volume.
+
+How It Works
+
+The monitoring pipeline is configured using Kubernetes-native best practices:
+
+Application Instrumentation: The FastAPI application uses prometheus-fastapi-instrumentator to automatically expose a /metrics endpoint with detailed performance data.
+
+Monitoring Stack: The kube-prometheus-stack is deployed via Helm into its own monitoring namespace. This stack includes Prometheus (for data collection) and Grafana (for visualization).
+
+Service Discovery: A ServiceMonitor resource is deployed. This is the key component that enables declarative, automated service discovery.
+
+The ServiceMonitor is configured to watch the default namespace for any Service that has the label app: model-api.
+
+Once it finds our service, it instructs Prometheus to automatically begin scraping metrics from the port named http at a 15-second interval.
+
+This setup means monitoring is "zero-touch"—any new pod added to the deployment will be automatically discovered and monitored by Prometheus without any manual configuration.
+
+Visualizing the Metrics (Local Demo)
+
+You can access the live Grafana dashboard to see your API's performance.
+
+Install the Monitoring Stack:
+
+Bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
+Get the Grafana Admin Password:
+
+Bash
+kubectl get secret -n monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
+Access the Grafana Dashboard: Run this command to open a secure tunnel to the Grafana service.
+
+Bash
+kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
+Now, go to the URL provided in your PORTS tab for port 3000.
+
+Username: admin
+
+Password: (Paste the password you retrieved)
+
+Generate Traffic: To see data, you must generate requests. Open a new terminal and forward your API's port:
+
+Bash
+kubectl port-forward svc/model-api-service 8080:80
+In a third terminal, run a curl loop (using the URL for port 8080 from your PORTS tab):
+
+Bash
+while true; do curl -k -X POST -H "Content-Type: application/json" -d '{"patient_data": {"age": 70}}' <URL_FROM_PORTS_TAB>/predict; sleep 0.5; done
+Build a Panel: In Grafana, create a new dashboard and add a panel. Use the following PromQL query to see the live request rate:
+
+Code snippet
+rate(http_requests_total{job="serviceMonitor/default/model-api-servicemonitor/0"}[1m])
+Set your dashboard's time range to "Last 5 minutes" to see the traffic.
