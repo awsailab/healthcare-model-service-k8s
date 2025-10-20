@@ -1,0 +1,11 @@
+# Create the .gitignore file with standard Python rules
+tee .gitignore > /dev/null <<'EOT'
+# Python
+__pycache__/
+*.pyc
+
+# Environment folders
+.venv/
+venv/
+EOT
+minikube-linux-amd64
