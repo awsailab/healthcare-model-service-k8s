@@ -1,0 +1,21 @@
+# k8s/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: model-api-servicemonitor
+  # IMPORTANT: The label that connects this to the Prometheus Operator
+  labels:
+    release: prometheus
+spec:
+  # 1. Tells the monitor WHICH service to look for
+  selector:
+    matchLabels:
+      app: model-api # This matches the label on our pods
+  # 2. Tells the monitor WHERE to look
+  namespaceSelector:
+    matchNames:
+      - default # The namespace our app is in
+  # 3. Tells the monitor HOW to scrape it
+  endpoints:
+  - port: http # This matches the port name in our service.yaml
+    interval: 15s # Scrape metrics every 15 seconds
